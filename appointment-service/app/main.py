@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
-from pymongo import MongoClient
+from pymongo import MongoClient, ReturnDocument
 from dotenv import load_dotenv
 import os
 
@@ -32,6 +32,16 @@ class AppointmentCreate(BaseModel):
     status: str = Field(..., min_length=2, max_length=50)
 
 
+def get_next_sequence(sequence_name: str) -> int:
+    counter = counters_collection.find_one_and_update(
+        {"_id": sequence_name},
+        {"$inc": {"sequence_value": 1}},
+        upsert=True,
+        return_document=ReturnDocument.AFTER
+    )
+    return counter["sequence_value"]
+
+
 @app.get("/health")
 def health():
     return {"message": "Appointment Service is running"}
@@ -48,3 +58,35 @@ def get_appointment(appointment_id: int):
     if not appointment:
         raise HTTPException(status_code=404, detail="Appointment not found")
     return appointment
+
+
+@app.post("/")
+def create_appointment(appointment: AppointmentCreate):
+    patient = patients_collection.find_one({"id": appointment.patient_id})
+    if not patient:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Patient with id {appointment.patient_id} does not exist"
+        )
+
+    doctor = doctors_collection.find_one({"id": appointment.doctor_id})
+    if not doctor:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Doctor with id {appointment.doctor_id} does not exist"
+        )
+
+    new_id = get_next_sequence("appointment_id")
+
+    new_appointment = {
+        "id": new_id,
+        "patient_id": appointment.patient_id,
+        "doctor_id": appointment.doctor_id,
+        "appointment_date": appointment.appointment_date,
+        "status": appointment.status
+    }
+
+    appointments_collection.insert_one(new_appointment)
+    new_appointment.pop("_id", None)
+
+    return new_appointment
