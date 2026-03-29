@@ -1,7 +1,28 @@
 from fastapi import FastAPI
+from pydantic import BaseModel
+from pymongo import MongoClient
+from dotenv import load_dotenv
+import os
 
-app = FastAPI()
+load_dotenv()
 
-@app.get("/")
-def root():
-    return {"message": "Service is running"}
+app = FastAPI(
+    title="Doctor Service",
+    version="1.0.0",
+    root_path="/doctors"
+)
+
+mongo_url = os.getenv("MONGO_URL")
+if not mongo_url:
+    raise ValueError("MONGO_URL is not set in .env")
+
+client = MongoClient(mongo_url)
+db = client["hospital_db"]
+
+doctors_collection = db["doctors"]
+counters_collection = db["counters"]
+
+
+class DoctorCreate(BaseModel):
+    name: str
+    specialization: str
