@@ -54,4 +54,25 @@ def get_bill(bill_id: int):
     if not bill:
         raise HTTPException(status_code=404, detail="Bill not found")
     return bill
+@app.post("/")
+def create_bill(bill: BillCreate):
+    appointment = appointments_collection.find_one({"id": bill.appointment_id})
+    if not appointment:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Appointment with id {bill.appointment_id} does not exist"
+        )
 
+    new_id = get_next_sequence("bill_id")
+
+    new_bill = {
+        "id": new_id,
+        "appointment_id": bill.appointment_id,
+        "amount": bill.amount,
+        "payment_status": bill.payment_status
+    }
+
+    bills_collection.insert_one(new_bill)
+
+    new_bill.pop("_id", None)
+    return new_bill
