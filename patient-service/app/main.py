@@ -1,7 +1,10 @@
 from fastapi import FastAPI
+from dotenv import load_dotenv
 
-app = FastAPI()
+load_dotenv()
 
-@app.get("/")
-def root():
-    return {"message": "Service is running"}
+app = FastAPI(
+    title="Patient Service",
+    version="1.0.0",
+    root_path="/patients"
+)
