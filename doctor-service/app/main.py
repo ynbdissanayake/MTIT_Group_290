@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from pymongo import MongoClient
 from dotenv import load_dotenv
@@ -36,3 +36,11 @@ def health():
 @app.get("/")
 def get_doctors():
     return list(doctors_collection.find({}, {"_id": 0}))
+
+
+@app.get("/{doctor_id}")
+def get_doctor(doctor_id: int):
+    doctor = doctors_collection.find_one({"id": doctor_id}, {"_id": 0})
+    if not doctor:
+        raise HTTPException(status_code=404, detail="Doctor not found")
+    return doctor
