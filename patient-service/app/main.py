@@ -45,6 +45,13 @@ def health():
 def get_patients():
     return list(patients_collection.find({}, {"_id": 0}))
 
+@app.get("/{patient_id}")
+def get_patient(patient_id: int):
+    patient = patients_collection.find_one({"id": patient_id}, {"_id": 0})
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+    return patient
+
 @app.post("/")
 def create_patient(patient: PatientCreate):
     new_id = get_next_sequence("patient_id")
