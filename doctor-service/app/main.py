@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from pymongo import MongoClient
+from pymongo import MongoClient, ReturnDocument
 from dotenv import load_dotenv
 import os
 
@@ -28,6 +28,16 @@ class DoctorCreate(BaseModel):
     specialization: str
 
 
+def get_next_sequence(sequence_name: str) -> int:
+    counter = counters_collection.find_one_and_update(
+        {"_id": sequence_name},
+        {"$inc": {"sequence_value": 1}},
+        upsert=True,
+        return_document=ReturnDocument.AFTER
+    )
+    return counter["sequence_value"]
+
+
 @app.get("/health")
 def health():
     return {"message": "Doctor Service is running"}
@@ -44,3 +54,18 @@ def get_doctor(doctor_id: int):
     if not doctor:
         raise HTTPException(status_code=404, detail="Doctor not found")
     return doctor
+
+
+@app.post("/")
+def create_doctor(doctor: DoctorCreate):
+    new_id = get_next_sequence("doctor_id")
+
+    new_doctor = {
+        "id": new_id,
+        "name": doctor.name,
+        "specialization": doctor.specialization
+    }
+
+    doctors_collection.insert_one(new_doctor)
+    new_doctor.pop("_id", None)
+    return new_doctor
