@@ -26,3 +26,13 @@ counters_collection = db["counters"]
 class DoctorCreate(BaseModel):
     name: str
     specialization: str
+
+
+@app.get("/health")
+def health():
+    return {"message": "Doctor Service is running"}
+
+
+@app.get("/")
+def get_doctors():
+    return list(doctors_collection.find({}, {"_id": 0}))
