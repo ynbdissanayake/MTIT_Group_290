@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from pymongo import MongoClient, ReturnDocument
 from dotenv import load_dotenv
 import os
@@ -24,8 +24,8 @@ counters_collection = db["counters"]
 
 
 class DoctorCreate(BaseModel):
-    name: str
-    specialization: str
+    name: str = Field(..., min_length=2, max_length=100)
+    specialization: str = Field(..., min_length=2, max_length=100)
 
 
 def get_next_sequence(sequence_name: str) -> int:
