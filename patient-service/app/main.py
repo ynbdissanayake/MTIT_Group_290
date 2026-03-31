@@ -36,3 +36,11 @@ def get_next_sequence(sequence_name: str) -> int:
         return_document=ReturnDocument.AFTER
     )
     return counter["sequence_value"]
+
+@app.get("/health")
+def health():
+    return {"message": "Patient Service is running"}
+
+@app.get("/")
+def get_patients():
+    return list(patients_collection.find({}, {"_id": 0}))
