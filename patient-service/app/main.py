@@ -44,3 +44,19 @@ def health():
 @app.get("/")
 def get_patients():
     return list(patients_collection.find({}, {"_id": 0}))
+
+@app.post("/")
+def create_patient(patient: PatientCreate):
+    new_id = get_next_sequence("patient_id")
+
+    new_patient = {
+        "id": new_id,
+        "name": patient.name,
+        "age": patient.age,
+        "contact": patient.contact
+    }
+
+    patients_collection.insert_one(new_patient)
+
+    new_patient.pop("_id", None)
+    return new_patient
